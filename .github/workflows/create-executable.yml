@@ -24,6 +24,7 @@ jobs:
           pyinstaller .\launcher.py -F -c --distpath=. --clean --onefile --additional-hooks-dir=hooks --name=wormhole
           Compress-Archive -Path wormhole.exe -DestinationPath wormhole.zip
       - name: Upload artifact
+        if: ${{ steps.check_build.outputs.release_exists == '0' }}
         uses: actions/upload-artifact@v2
         with:
           name: wormhole
@@ -39,6 +40,7 @@ jobs:
           draft: false
           prerelease: false
       - name: Upload release asset
+        if: ${{ steps.check_build.outputs.release_exists == '0' }}
         id: upload-release-asset
         uses: actions/upload-release-asset@v1
         env:
