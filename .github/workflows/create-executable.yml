@@ -13,7 +13,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v2
       - name: Install pip
-        run: pip install requests poetry
+        run: pip install requests
       - name: Check build
         id: check_build
         run: python build-check.py
