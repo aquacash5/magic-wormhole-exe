@@ -1,0 +1,36 @@
+name: Create Executable
+
+on:
+  push:
+    branches: [master]
+  schedule:
+    - cron: "0 0 * * *"
+
+jobs:
+  create-executable:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+      - name: Install pip
+        run: pip install requests poetry
+      - name: Check build
+        id: check_build
+        run: python build-check.py
+      - name: Build executable
+        if: ${{ steps.check_build.outputs.release_exists == '0' }}
+        run: |
+          pip install pyinstaller magic-wormhole==${{ steps.check_build.outputs.version }}
+          python -m pyinstaller \
+            .\launcher.py \
+            -F -c \
+            --distpath=. \
+            --clean \
+            --onefile \
+            --additional-hooks-dir=hooks \
+            --name=wormhole
+        - name: Upload artifact
+          uses: actions/upload-artifact@v2
+          with:
+            name: wormhole
+            path: wormhole.exe
