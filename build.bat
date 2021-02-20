@@ -1,1 +1,0 @@
-poetry run pyinstaller .\launcher.py -F -c --distpath=. --clean --onefile --additional-hooks-dir=hooks --name=wormhole
