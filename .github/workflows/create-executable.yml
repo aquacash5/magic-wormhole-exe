@@ -21,13 +21,13 @@ jobs:
         if: ${{ steps.check_build.outputs.release_exists == '0' }}
         run: |
           pip install pyinstaller magic-wormhole==${{ steps.check_build.outputs.version }}
-          python -m pyinstaller \
-            .\launcher.py \
-            -F -c \
-            --distpath=. \
-            --clean \
-            --onefile \
-            --additional-hooks-dir=hooks \
+          python -m pyinstaller `
+            .\launcher.py `
+            -F -c `
+            --distpath=. `
+            --clean `
+            --onefile `
+            --additional-hooks-dir=hooks `
             --name=wormhole
         - name: Upload artifact
           uses: actions/upload-artifact@v2
