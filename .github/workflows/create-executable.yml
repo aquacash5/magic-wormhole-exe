@@ -18,17 +18,17 @@ jobs:
         id: check_build
         run: python build-check.py
       - name: Build executable
-        if: ${{ steps.check_build.outputs.release_exists == '0' }}
         run: |
           pip install pyinstaller magic-wormhole==${{ steps.check_build.outputs.version }}
           pyinstaller .\launcher.py -F -c --distpath=. --clean --onefile --additional-hooks-dir=hooks --name=wormhole
-          Compress-Archive -Path wormhole.exe -DestinationPath wormhole.zip
-      - name: Upload artifact
-        if: ${{ steps.check_build.outputs.release_exists == '0' }}
+          echo "MD5 $((Get-FileHash .\wormhole.exe -Algorithm MD5).Hash) wormhole.exe" >> wormhole.exe.checksum.txt
+          echo "SHA1 $((Get-FileHash .\wormhole.exe -Algorithm SHA1).Hash) wormhole.exe" >> wormhole.exe.checksum.txt
+          echo "SHA256 $((Get-FileHash .\wormhole.exe -Algorithm SHA256).Hash) wormhole.exe" >> wormhole.exe.checksum.txt
+      - name: Upload executable artifact
         uses: actions/upload-artifact@v2
         with:
           name: wormhole
-          path: wormhole.exe
+          path: wormhole.*
       - name: Create release
         if: ${{ steps.check_build.outputs.release_exists == '0' }}
         id: create_release
@@ -40,14 +40,25 @@ jobs:
           release_name: Release ${{ steps.check_build.outputs.version }}
           draft: false
           prerelease: false
-      - name: Upload release asset
+      - name: Upload wormhole executable
         if: ${{ steps.check_build.outputs.release_exists == '0' }}
-        id: upload-release-asset
+        id: upload-exe
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./wormhole.zip
-          asset_name: wormhole.zip
-          asset_content_type: application/zip
+          asset_path: ./wormhole.exe
+          asset_name: wormhole.exe
+          asset_content_type: application/octet-stream
+      - name: Upload checksums
+        if: ${{ steps.check_build.outputs.release_exists == '0' }}
+        id: upload-checksums
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./wormhole.exe.checksum.txt
+          asset_name: wormhole.exe.checksum.txt
+          asset_content_type: text/plain
