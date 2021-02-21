@@ -80,7 +80,7 @@ jobs:
           asset_content_type: text/plain
 
       - name: Chocolatey setup
-        working-directory: .\tools
+        working-directory: tools
         env:
           SHA256_CHECKSUM: ${{ steps.exe-info.outputs.SHA256_CHECKSUM }}
         run: |
@@ -102,18 +102,17 @@ jobs:
             -replace "x64: .*", `
             "x64: ${{ steps.upload-exe.outputs.browser_download_url }}") `
             | Set-Content .\tools\VERIFICATION.txt
-
           ((Get-Content .\tools\VERIFICATION.txt) `
             -replace "checksum: .*", `
             "checksum: $SHA256_CHECKSUM") `
             | Set-Content .\tools\VERIFICATION.txt
 
       - name: Chocolatey pack
-        working-directory: .\tools
+        working-directory: tools
         run: choco pack
 
       - name: Chocolatey push
-        working-directory: .\tools
+        working-directory: tools
         run: choco push --key=${{ secrets.CHOCOLATEY_API_KEY }} --noop
 
       - name: Upload chocolatey folder
