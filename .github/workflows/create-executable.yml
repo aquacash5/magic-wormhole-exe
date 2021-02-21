@@ -24,11 +24,11 @@ jobs:
         id: exe-info
         run: |
           pip install pyinstaller magic-wormhole==${{ steps.check_build.outputs.version }}
-          pyinstaller .\launcher.py -F -c --distpath=. --clean --onefile --additional-hooks-dir=hooks --name=wormhole
+          pyinstaller ./launcher.py -F -c --distpath=. --clean --onefile --additional-hooks-dir=hooks --name=wormhole
 
-          $MD5_CHECKSUM=(Get-FileHash .\wormhole.exe -Algorithm MD5).Hash
-          $SHA1_CHECKSUM=(Get-FileHash .\wormhole.exe -Algorithm SHA1).Hash
-          $SHA256_CHECKSUM=(Get-FileHash .\wormhole.exe -Algorithm SHA256).Hash
+          $MD5_CHECKSUM=(Get-FileHash ./wormhole.exe -Algorithm MD5).Hash
+          $SHA1_CHECKSUM=(Get-FileHash ./wormhole.exe -Algorithm SHA1).Hash
+          $SHA256_CHECKSUM=(Get-FileHash ./wormhole.exe -Algorithm SHA256).Hash
 
           echo "MD5 $MD5_CHECKSUM wormhole.exe" >> wormhole.exe.checksum.txt
           echo "SHA1 $SHA1_CHECKSUM wormhole.exe" >> wormhole.exe.checksum.txt
@@ -84,28 +84,28 @@ jobs:
         env:
           SHA256_CHECKSUM: ${{ steps.exe-info.outputs.SHA256_CHECKSUM }}
         run: |
-          ((Get-Content .\magic-wormhole.portable.nuspec) `
-            -replace '<version>(.*)</version>', `
+          ((Get-Content ./magic-wormhole.portable.nuspec) `
+            -replace '<version>.*</version>', `
             "<version>${{ steps.check_build.outputs.version }}</version>") `
-            | Set-Content .\magic-wormhole.portable.nuspec
+            | Set-Content ./magic-wormhole.portable.nuspec
 
-          ((Get-Content .\tools\chocolateyinstall.ps1) `
+          ((Get-Content ./tools/chocolateyinstall.ps1) `
             -replace "checksum = '.*'", `
             "checksum = '$SHA256_CHECKSUM'") `
-            | Set-Content .\tools\chocolateyinstall.ps1
-          ((Get-Content .\tools\chocolateyinstall.ps1) `
+            | Set-Content ./tools/chocolateyinstall.ps1
+          ((Get-Content ./tools/chocolateyinstall.ps1) `
             -replace "$url = '.*'", `
             "$url = '${{ steps.upload-exe.outputs.browser_download_url }}'") `
-            | Set-Content .\tools\chocolateyinstall.ps1
+            | Set-Content ./tools/chocolateyinstall.ps1
 
-          ((Get-Content .\tools\VERIFICATION.txt) `
+          ((Get-Content ./tools/VERIFICATION.txt) `
             -replace "x64: .*", `
             "x64: ${{ steps.upload-exe.outputs.browser_download_url }}") `
-            | Set-Content .\tools\VERIFICATION.txt
-          ((Get-Content .\tools\VERIFICATION.txt) `
+            | Set-Content ./tools/VERIFICATION.txt
+          ((Get-Content ./tools/VERIFICATION.txt) `
             -replace "checksum: .*", `
             "checksum: $SHA256_CHECKSUM") `
-            | Set-Content .\tools\VERIFICATION.txt
+            | Set-Content ./tools/VERIFICATION.txt
 
       - name: Chocolatey pack
         working-directory: ./tools
