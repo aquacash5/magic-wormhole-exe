@@ -80,7 +80,7 @@ jobs:
           asset_content_type: text/plain
 
       - name: Chocolatey setup
-        working-directory: ./tools
+        working-directory: magic-wormhole.portable
         env:
           SHA256_CHECKSUM: ${{ steps.exe-info.outputs.SHA256_CHECKSUM }}
         run: |
@@ -108,11 +108,11 @@ jobs:
             | Set-Content ./tools/VERIFICATION.txt
 
       - name: Chocolatey pack
-        working-directory: ./tools
+        working-directory: magic-wormhole.portable
         run: choco pack
 
       - name: Chocolatey push
-        working-directory: ./tools
+        working-directory: magic-wormhole.portable
         run: choco push --key=${{ secrets.CHOCOLATEY_API_KEY }} --noop
 
       - name: Upload chocolatey folder
