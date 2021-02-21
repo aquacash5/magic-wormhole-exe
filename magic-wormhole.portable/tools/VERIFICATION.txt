@@ -16,4 +16,4 @@ checksumtype: sha256
 checksum: E658BC2B865C81AAC87EAB76173CC7597470089CFC7DFE0CE492B31D77D7D457
 
 The included 'LICENSE.txt' file have been obtained from:
-https://github.com/spesmilo/electrum/blob/master/LICENCE
+https://github.com/magic-wormhole/magic-wormhole/blob/master/LICENSE
