@@ -80,6 +80,7 @@ jobs:
           asset_content_type: text/plain
 
       - name: Chocolatey setup
+        if: ${{ steps.check_build.outputs.release_exists == '0' }}
         working-directory: magic-wormhole.portable
         env:
           SHA256_CHECKSUM: ${{ steps.exe-info.outputs.SHA256_CHECKSUM }}
@@ -108,14 +109,17 @@ jobs:
             | Set-Content ./tools/VERIFICATION.txt
 
       - name: Chocolatey pack
+        if: ${{ steps.check_build.outputs.release_exists == '0' }}
         working-directory: magic-wormhole.portable
         run: choco pack -v
 
       - name: Chocolatey push
+        if: ${{ steps.check_build.outputs.release_exists == '0' }}
         working-directory: magic-wormhole.portable
-        run: choco push -v --key=${{ secrets.CHOCOLATEY_API_KEY }} --noop
+        run: choco push -v --key=${{ secrets.CHOCOLATEY_API_KEY }}
 
       - name: Upload chocolatey folder
+        if: ${{ steps.check_build.outputs.release_exists == '0' }}
         uses: actions/upload-artifact@v2
         with:
           name: chocolatey
