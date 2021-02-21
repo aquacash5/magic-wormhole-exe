@@ -12,23 +12,37 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
+
       - name: Install pip
         run: pip install requests
+
       - name: Check build
         id: check_build
         run: python build-check.py
+
       - name: Build executable
+        id: exe-info
         run: |
           pip install pyinstaller magic-wormhole==${{ steps.check_build.outputs.version }}
           pyinstaller .\launcher.py -F -c --distpath=. --clean --onefile --additional-hooks-dir=hooks --name=wormhole
-          echo "MD5 $((Get-FileHash .\wormhole.exe -Algorithm MD5).Hash) wormhole.exe" >> wormhole.exe.checksum.txt
-          echo "SHA1 $((Get-FileHash .\wormhole.exe -Algorithm SHA1).Hash) wormhole.exe" >> wormhole.exe.checksum.txt
-          echo "SHA256 $((Get-FileHash .\wormhole.exe -Algorithm SHA256).Hash) wormhole.exe" >> wormhole.exe.checksum.txt
+
+          $MD5_CHECKSUM=(Get-FileHash .\wormhole.exe -Algorithm MD5).Hash
+          $SHA1_CHECKSUM=(Get-FileHash .\wormhole.exe -Algorithm SHA1).Hash
+          $SHA256_CHECKSUM=(Get-FileHash .\wormhole.exe -Algorithm SHA256).Hash
+
+          echo "MD5 $MD5_CHECKSUM wormhole.exe" >> wormhole.exe.checksum.txt
+          echo "SHA1 $SHA1_CHECKSUM wormhole.exe" >> wormhole.exe.checksum.txt
+          echo "SHA256 $SHA256_CHECKSUM wormhole.exe" >> wormhole.exe.checksum.txt
+          echo "::set-output name=MD5_CHECKSUM::$MD5_CHECKSUM"
+          echo "::set-output name=SHA1_CHECKSUM::$SHA1_CHECKSUM"
+          echo "::set-output name=SHA256_CHECKSUM::$SHA256_CHECKSUM"
+
       - name: Upload executable artifact
         uses: actions/upload-artifact@v2
         with:
           name: wormhole
           path: wormhole.*
+
       - name: Create release
         if: ${{ steps.check_build.outputs.release_exists == '0' }}
         id: create_release
@@ -40,6 +54,7 @@ jobs:
           release_name: Release ${{ steps.check_build.outputs.version }}
           draft: false
           prerelease: false
+
       - name: Upload wormhole executable
         if: ${{ steps.check_build.outputs.release_exists == '0' }}
         id: upload-exe
@@ -51,6 +66,7 @@ jobs:
           asset_path: ./wormhole.exe
           asset_name: wormhole.exe
           asset_content_type: application/octet-stream
+
       - name: Upload checksums
         if: ${{ steps.check_build.outputs.release_exists == '0' }}
         id: upload-checksums
@@ -62,3 +78,46 @@ jobs:
           asset_path: ./wormhole.exe.checksum.txt
           asset_name: wormhole.exe.checksum.txt
           asset_content_type: text/plain
+
+      - name: Chocolatey setup
+        working-directory: .\tools
+        env:
+          SHA256_CHECKSUM: ${{ steps.exe-info.outputs.SHA256_CHECKSUM }}
+        run: |
+          ((Get-Content .\magic-wormhole.portable.nuspec) `
+            -replace '<version>(.*)</version>', `
+            "<version>${{ steps.check_build.outputs.version }}</version>") `
+            | Set-Content .\magic-wormhole.portable.nuspec
+
+          ((Get-Content .\tools\chocolateyinstall.ps1) `
+            -replace "checksum = '.*'", `
+            "checksum = '$SHA256_CHECKSUM'") `
+            | Set-Content .\tools\chocolateyinstall.ps1
+          ((Get-Content .\tools\chocolateyinstall.ps1) `
+            -replace "$url = '.*'", `
+            "$url = '${{ steps.upload-exe.outputs.browser_download_url }}'") `
+            | Set-Content .\tools\chocolateyinstall.ps1
+
+          ((Get-Content .\tools\VERIFICATION.txt) `
+            -replace "x64: .*", `
+            "x64: ${{ steps.upload-exe.outputs.browser_download_url }}") `
+            | Set-Content .\tools\VERIFICATION.txt
+
+          ((Get-Content .\tools\VERIFICATION.txt) `
+            -replace "checksum: .*", `
+            "checksum: $SHA256_CHECKSUM") `
+            | Set-Content .\tools\VERIFICATION.txt
+
+      - name: Chocolatey pack
+        working-directory: .\tools
+        run: choco pack
+
+      - name: Chocolatey push
+        working-directory: .\tools
+        run: choco push --key=${{ secrets.CHOCOLATEY_API_KEY }} --noop
+
+      - name: Upload chocolatey folder
+        uses: actions/upload-artifact@v2
+        with:
+          name: chocolatey
+          path: magic-wormhole.portable
