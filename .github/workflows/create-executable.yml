@@ -109,11 +109,11 @@ jobs:
 
       - name: Chocolatey pack
         working-directory: magic-wormhole.portable
-        run: choco pack
+        run: choco pack -v
 
       - name: Chocolatey push
         working-directory: magic-wormhole.portable
-        run: choco push --key=${{ secrets.CHOCOLATEY_API_KEY }} --noop
+        run: choco push -v --key=${{ secrets.CHOCOLATEY_API_KEY }} --noop
 
       - name: Upload chocolatey folder
         uses: actions/upload-artifact@v2
