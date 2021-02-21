@@ -79,7 +79,7 @@ jobs:
           asset_name: wormhole.exe.checksum.txt
           asset_content_type: text/plain
 
-      - name: Chocolatey
+      - name: Chocolatey setup
         working-directory: .\tools
         env:
           SHA256_CHECKSUM: ${{ steps.exe-info.outputs.SHA256_CHECKSUM }}
@@ -108,9 +108,13 @@ jobs:
             "checksum: $SHA256_CHECKSUM") `
             | Set-Content .\tools\VERIFICATION.txt
 
-          choco pack
+      - name: Chocolatey pack
+        working-directory: .\tools
+        run: choco pack
 
-          choco push --key=${{ secrets.CHOCOLATEY_API_KEY }} --noop
+      - name: Chocolatey push
+        working-directory: .\tools
+        run: choco push --key=${{ secrets.CHOCOLATEY_API_KEY }} --noop
 
       - name: Upload chocolatey folder
         uses: actions/upload-artifact@v2
