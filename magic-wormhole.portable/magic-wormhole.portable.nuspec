@@ -1,0 +1,27 @@
+﻿<?xml version="1.0"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2011/08/nuspec.xsd">
+  <metadata>
+    <id>magic-wormhole.portable</id>
+    <version>0.12.0</version>
+    <title>magic-wormhole</title>
+    <authors>aquacash5,vaporwave9,warner</authors>
+    <owners>aquacash5</owners>
+    <licenseUrl>https://github.com/magic-wormhole/magic-wormhole/blob/master/LICENSE</licenseUrl>
+    <projectUrl>https://github.com/aquacash5/magic-wormhole-exe</projectUrl>
+    <iconUrl>https://avatars.githubusercontent.com/u/59107264</iconUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>Get things from one computer to another, safely.
+
+This package provides a library and a command-line tool named wormhole, which makes it possible to get arbitrary-sized files and directories (or short pieces of text) from one computer to another. The two endpoints are identified by using identical "wormhole codes": in general, the sending machine generates and displays the code, which must then be typed into the receiving machine.
+
+The codes are short and human-pronounceable, using a phonetically-distinct wordlist. The receiving side offers tab-completion on the codewords, so usually only a few characters must be typed. Wormhole codes are single-use and do not need to be memorized.</description>
+    <summary>Get things from one computer to another, safely.</summary>
+    <releaseNotes>[Software Changelog](https://github.com/magic-wormhole/magic-wormhole/blob/master/NEWS.md)
+[Package Changelog](https://github.com/aquacash5/magic-wormhole-exe)</releaseNotes>
+    <copyright>Remove or add one this is free software anyways</copyright>
+    <tags>filetransfer</tags>
+    <projectSourceUrl>https://github.com/magic-wormhole/magic-wormhole</projectSourceUrl>
+    <packageSourceUrl>https://github.com/aquacash5/magic-wormhole-exe</packageSourceUrl>
+    <bugTrackerUrl>https://github.com/aquacash5/magic-wormhole-exe/issues</bugTrackerUrl>
+  </metadata>
+</package>
