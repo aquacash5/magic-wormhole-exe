@@ -86,21 +86,21 @@ jobs:
           SHA256_CHECKSUM: ${{ steps.exe-info.outputs.SHA256_CHECKSUM }}
         run: |
           (Get-Content ./magic-wormhole.portable.nuspec) |`
-            Foreach {$_ -replace '<version>.*</version>','<version>${{ steps.check_build.outputs.version }}</version>'} |`
+            Foreach {$_ -replace '<version>.*</version>', '<version>${{ steps.check_build.outputs.version }}</version>'} |`
             Out-File ./magic-wormhole.portable.nuspec
 
           (Get-Content ./tools/chocolateyinstall.ps1) |`
-            Foreach {$_ -replace '^\$checksum = ''''',"`$checksum = '$SHA256_CHECKSUM'"} |`
+            Foreach {$_ -replace '^\$checksum = ''''', "`$checksum = '${{ steps.exe-info.outputs.SHA256_CHECKSUM }}'"} |`
             Out-File ./tools/chocolateyinstall.ps1
           (Get-Content ./tools/chocolateyinstall.ps1) |`
-            Foreach {$_ -replace '^\$url = ''''',"`$url = '${{ steps.upload-exe.outputs.browser_download_url }}'"} |`
+            Foreach {$_ -replace '^\$url = ''''', "`$url = '${{ steps.upload-exe.outputs.browser_download_url }}'"} |`
             Out-File ./tools/chocolateyinstall.ps1
 
           (Get-Content ./tools/VERIFICATION.txt) |`
-            Foreach {$_ -replace 'x64:','x64: ${{ steps.upload-exe.outputs.browser_download_url }}'} |`
+            Foreach {$_ -replace 'x64:', 'x64: ${{ steps.upload-exe.outputs.browser_download_url }}'} |`
             Out-File ./tools/VERIFICATION.txt
           (Get-Content ./tools/VERIFICATION.txt) |`
-            Foreach {$_ -replace 'checksum:',"checksum: $SHA256_CHECKSUM"} |`
+            Foreach {$_ -replace 'checksum:', 'checksum: ${{ steps.exe-info.outputs.SHA256_CHECKSUM }}'} |`
             Out-File ./tools/VERIFICATION.txt
 
       - name: Chocolatey pack
@@ -111,7 +111,7 @@ jobs:
       - name: Chocolatey push
         if: ${{ steps.check_build.outputs.release_exists == '0' }}
         working-directory: magic-wormhole.portable
-        run: choco push -v --key=${{ secrets.CHOCOLATEY_API_KEY }}
+        run: choco push -v --key=${{ secrets.CHOCOLATEY_API_KEY }} --noop
 
       - name: Upload chocolatey folder
         if: ${{ steps.check_build.outputs.release_exists == '0' }}
