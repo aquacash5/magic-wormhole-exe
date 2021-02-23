@@ -79,11 +79,9 @@ jobs:
           asset_name: wormhole.exe.checksum.txt
           asset_content_type: text/plain
 
-      - name: Chocolatey setup
+      - name: Chocolatey setup (portable)
         if: ${{ steps.check_build.outputs.release_exists == '0' }}
         working-directory: magic-wormhole.portable
-        env:
-          SHA256_CHECKSUM: ${{ steps.exe-info.outputs.SHA256_CHECKSUM }}
         run: |
           (Get-Content ./magic-wormhole.portable.nuspec) |`
             Foreach {$_ -replace '<version>.*</version>', '<version>${{ steps.check_build.outputs.version }}</version>'} |`
@@ -103,14 +101,42 @@ jobs:
             Foreach {$_ -replace 'checksum:', 'checksum: ${{ steps.exe-info.outputs.SHA256_CHECKSUM }}'} |`
             Out-File ./tools/VERIFICATION.txt
 
-      - name: Chocolatey pack
+      - name: Chocolatey pack (portable)
         if: ${{ steps.check_build.outputs.release_exists == '0' }}
         working-directory: magic-wormhole.portable
         run: choco pack -v
 
-      - name: Chocolatey push
+      - name: Chocolatey push (portable)
         if: ${{ steps.check_build.outputs.release_exists == '0' }}
         working-directory: magic-wormhole.portable
+        run: choco push -v --key=${{ secrets.CHOCOLATEY_API_KEY }}
+
+      - name: Upload chocolatey (portable) folder
+        if: ${{ steps.check_build.outputs.release_exists == '0' }}
+        uses: actions/upload-artifact@v2
+        with:
+          name: chocolatey-portable
+          path: magic-wormhole.portable
+
+      - name: Chocolatey setup
+        if: ${{ steps.check_build.outputs.release_exists == '0' }}
+        working-directory: magic-wormhole
+        run: |
+          (Get-Content ./magic-wormhole.nuspec) |`
+            Foreach {$_ -replace '<version>.*</version>', '<version>${{ steps.check_build.outputs.version }}</version>'} |`
+            Out-File ./magic-wormhole.portable.nuspec
+          (Get-Content ./magic-wormhole.nuspec) |`
+            Foreach {$_ -replace '<dependency id="magic-wormhole.portable" version=".*" />', '<dependency id="magic-wormhole.portable" version="${{ steps.check_build.outputs.version }}" />'} |`
+            Out-File ./magic-wormhole.portable.nuspec
+
+      - name: Chocolatey pack
+        if: ${{ steps.check_build.outputs.release_exists == '0' }}
+        working-directory: magic-wormhole
+        run: choco pack -v
+
+      - name: Chocolatey push
+        if: ${{ steps.check_build.outputs.release_exists == '0' }}
+        working-directory: magic-wormhole
         run: choco push -v --key=${{ secrets.CHOCOLATEY_API_KEY }}
 
       - name: Upload chocolatey folder
@@ -118,4 +144,4 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: chocolatey
-          path: magic-wormhole.portable
+          path: magic-wormhole
