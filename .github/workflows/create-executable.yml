@@ -94,13 +94,6 @@ jobs:
             Foreach {$_ -replace '^\$url = ''''', "`$url = '${{ steps.upload-exe.outputs.browser_download_url }}'"} |`
             Out-File ./tools/chocolateyinstall.ps1
 
-          (Get-Content ./tools/VERIFICATION.txt) |`
-            Foreach {$_ -replace 'x64:', 'x64: ${{ steps.upload-exe.outputs.browser_download_url }}'} |`
-            Out-File ./tools/VERIFICATION.txt
-          (Get-Content ./tools/VERIFICATION.txt) |`
-            Foreach {$_ -replace 'checksum:', 'checksum: ${{ steps.exe-info.outputs.SHA256_CHECKSUM }}'} |`
-            Out-File ./tools/VERIFICATION.txt
-
       - name: Chocolatey pack (portable)
         if: ${{ steps.check_build.outputs.release_exists == '0' }}
         working-directory: magic-wormhole.portable
@@ -124,10 +117,10 @@ jobs:
         run: |
           (Get-Content ./magic-wormhole.nuspec) |`
             Foreach {$_ -replace '<version>.*</version>', '<version>${{ steps.check_build.outputs.version }}</version>'} |`
-            Out-File ./magic-wormhole.portable.nuspec
+            Out-File ./magic-wormhole.nuspec
           (Get-Content ./magic-wormhole.nuspec) |`
             Foreach {$_ -replace '<dependency id="magic-wormhole.portable" version=".*" />', '<dependency id="magic-wormhole.portable" version="${{ steps.check_build.outputs.version }}" />'} |`
-            Out-File ./magic-wormhole.portable.nuspec
+            Out-File ./magic-wormhole.nuspec
 
       - name: Chocolatey pack
         if: ${{ steps.check_build.outputs.release_exists == '0' }}
