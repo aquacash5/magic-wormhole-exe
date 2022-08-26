@@ -5,3 +5,4 @@ This project is designed to create a windows executable for the
 
 ![Chocolatey Version](https://img.shields.io/chocolatey/v/magic-wormhole)
 ![Chocolatey](https://img.shields.io/chocolatey/dt/magic-wormhole)
+![Scoop Version](https://img.shields.io/scoop/v/magic-wormhole)
