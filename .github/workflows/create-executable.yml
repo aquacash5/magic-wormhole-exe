@@ -11,7 +11,7 @@ jobs:
     runs-on: windows-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Install pip
         run: pip install requests
@@ -38,7 +38,7 @@ jobs:
           echo "::set-output name=SHA256_CHECKSUM::$SHA256_CHECKSUM"
 
       - name: Upload executable artifact
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: wormhole
           path: wormhole.*
@@ -106,7 +106,7 @@ jobs:
 
       - name: Upload chocolatey (portable) folder
         if: ${{ steps.check_build.outputs.release_exists == '0' }}
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: chocolatey-portable
           path: magic-wormhole.portable
@@ -134,7 +134,7 @@ jobs:
 
       - name: Upload chocolatey folder
         if: ${{ steps.check_build.outputs.release_exists == '0' }}
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: chocolatey
           path: magic-wormhole
