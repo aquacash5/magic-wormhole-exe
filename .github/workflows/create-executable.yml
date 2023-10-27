@@ -99,7 +99,7 @@ jobs:
       - name: Chocolatey push (portable)
         if: ${{ steps.check_build.outputs.release_exists == '0' }}
         working-directory: magic-wormhole.portable
-        run: choco push -v --key=${{ secrets.CHOCOLATEY_API_KEY }}
+        run: choco push -v --key=${{ secrets.CHOCOLATEY_API_KEY }} -s="https://push.chocolatey.org/"
 
       - name: Upload chocolatey (portable) folder
         if: ${{ steps.check_build.outputs.release_exists == '0' }}
@@ -127,7 +127,7 @@ jobs:
       - name: Chocolatey push
         if: ${{ steps.check_build.outputs.release_exists == '0' }}
         working-directory: magic-wormhole
-        run: choco push -v --key=${{ secrets.CHOCOLATEY_API_KEY }}
+        run: choco push -v --key=${{ secrets.CHOCOLATEY_API_KEY }} -s="https://push.chocolatey.org/"
 
       - name: Upload chocolatey folder
         if: ${{ steps.check_build.outputs.release_exists == '0' }}
