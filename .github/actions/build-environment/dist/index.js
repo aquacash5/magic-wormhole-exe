@@ -27494,6 +27494,8 @@ __nccwpck_require__.r(__webpack_exports__);
 
 // EXTERNAL MODULE: ./node_modules/@actions/core/lib/core.js
 var core = __nccwpck_require__(2186);
+// EXTERNAL MODULE: ./node_modules/semver-sort/index.js
+var semver_sort = __nccwpck_require__(9805);
 ;// CONCATENATED MODULE: ./node_modules/zod/lib/index.mjs
 var util;
 (function (util) {
@@ -31513,8 +31515,6 @@ var z = /*#__PURE__*/Object.freeze({
 
 
 
-// EXTERNAL MODULE: ./node_modules/semver-sort/index.js
-var semver_sort = __nccwpck_require__(9805);
 ;// CONCATENATED MODULE: ./main.ts
 
 
