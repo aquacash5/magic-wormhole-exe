@@ -15,7 +15,7 @@ jobs:
 
       - name: Check build
         id: check-build
-        uses: ./actions/build-environment
+        uses: ./.github/actions/build-environment
         with:
           version: ${{ inputs.version }}
 
