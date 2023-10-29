@@ -1,0 +1,11 @@
+name: "Setup chocolatey package"
+description: "Setup chocolatey package"
+
+inputs:
+  version:
+    description: "Build version"
+    required: true
+
+runs:
+  using: "node20"
+  main: "dist/index.js"

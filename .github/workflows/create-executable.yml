@@ -2,6 +2,9 @@ name: Create Executable
 
 on:
   workflow_dispatch:
+    inputs:
+      version:
+        description: "Version of magic-wormhole to build"
 
 jobs:
   create-executable:
@@ -10,17 +13,15 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Install pip
-        run: pip install requests
-
       - name: Check build
-        id: check_build
-        run: python build-check.py
+        id: check-build
+        uses: ./actions/build-environment
+        with:
+          version: ${{ inputs.version }}
 
       - name: Build executable
-        id: exe-info
         run: |
-          pip install pyinstaller magic-wormhole==${{ steps.check_build.outputs.version }}
+          pip install pyinstaller magic-wormhole==${{ steps.check-build.outputs.version }}
           pyinstaller ./launcher.py -F -c --distpath=. --clean --onefile --additional-hooks-dir=hooks --name=wormhole
 
           $MD5_CHECKSUM=(Get-FileHash ./wormhole.exe -Algorithm MD5).Hash
@@ -30,9 +31,6 @@ jobs:
           echo "MD5 $MD5_CHECKSUM wormhole.exe" >> wormhole.exe.checksum.txt
           echo "SHA1 $SHA1_CHECKSUM wormhole.exe" >> wormhole.exe.checksum.txt
           echo "SHA256 $SHA256_CHECKSUM wormhole.exe" >> wormhole.exe.checksum.txt
-          echo "::set-output name=MD5_CHECKSUM::$MD5_CHECKSUM"
-          echo "::set-output name=SHA1_CHECKSUM::$SHA1_CHECKSUM"
-          echo "::set-output name=SHA256_CHECKSUM::$SHA256_CHECKSUM"
 
       - name: Upload executable artifact
         uses: actions/upload-artifact@v3
@@ -41,97 +39,35 @@ jobs:
           path: wormhole.*
 
       - name: Create release
-        if: ${{ steps.check_build.outputs.release_exists == '0' }}
-        id: create_release
+        id: create-release
+        if: steps.check-build.outputs.exists == false
         uses: actions/create-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: ${{ steps.check_build.outputs.version }}
-          release_name: Release ${{ steps.check_build.outputs.version }}
+          tag_name: ${{ steps.check-build.outputs.version }}
+          release_name: Release ${{ steps.check-build.outputs.version }}
           draft: false
           prerelease: false
 
       - name: Upload wormhole executable
-        if: ${{ steps.check_build.outputs.release_exists == '0' }}
-        id: upload-exe
+        if: steps.check-build.outputs.exists == false
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          upload_url: ${{ steps.create-release.outputs.upload_url }}
           asset_path: ./wormhole.exe
           asset_name: wormhole.exe
           asset_content_type: application/octet-stream
 
       - name: Upload checksums
-        if: ${{ steps.check_build.outputs.release_exists == '0' }}
-        id: upload-checksums
+        if: steps.check-build.outputs.exists == false
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          upload_url: ${{ steps.create-release.outputs.upload_url }}
           asset_path: ./wormhole.exe.checksum.txt
           asset_name: wormhole.exe.checksum.txt
           asset_content_type: text/plain
-
-      - name: Chocolatey setup (portable)
-        if: ${{ steps.check_build.outputs.release_exists == '0' }}
-        working-directory: magic-wormhole.portable
-        run: |
-          (Get-Content ./magic-wormhole.portable.nuspec) |`
-            Foreach {$_ -replace '<version>.*</version>', '<version>${{ steps.check_build.outputs.version }}</version>'} |`
-            Out-File ./magic-wormhole.portable.nuspec
-
-          (Get-Content ./tools/chocolateyinstall.ps1) |`
-            Foreach {$_ -replace '^\$checksum = ''''', "`$checksum = '${{ steps.exe-info.outputs.SHA256_CHECKSUM }}'"} |`
-            Out-File ./tools/chocolateyinstall.ps1
-          (Get-Content ./tools/chocolateyinstall.ps1) |`
-            Foreach {$_ -replace '^\$url = ''''', "`$url = '${{ steps.upload-exe.outputs.browser_download_url }}'"} |`
-            Out-File ./tools/chocolateyinstall.ps1
-
-      - name: Chocolatey pack (portable)
-        if: ${{ steps.check_build.outputs.release_exists == '0' }}
-        working-directory: magic-wormhole.portable
-        run: choco pack -v
-
-      - name: Chocolatey push (portable)
-        if: ${{ steps.check_build.outputs.release_exists == '0' }}
-        working-directory: magic-wormhole.portable
-        run: choco push -v --key=${{ secrets.CHOCOLATEY_API_KEY }} -s="https://push.chocolatey.org/"
-
-      - name: Upload chocolatey (portable) folder
-        if: ${{ steps.check_build.outputs.release_exists == '0' }}
-        uses: actions/upload-artifact@v3
-        with:
-          name: chocolatey-portable
-          path: magic-wormhole.portable
-
-      - name: Chocolatey setup
-        if: ${{ steps.check_build.outputs.release_exists == '0' }}
-        working-directory: magic-wormhole
-        run: |
-          (Get-Content ./magic-wormhole.nuspec) |`
-            Foreach {$_ -replace '<version>.*</version>', '<version>${{ steps.check_build.outputs.version }}</version>'} |`
-            Out-File ./magic-wormhole.nuspec
-          (Get-Content ./magic-wormhole.nuspec) |`
-            Foreach {$_ -replace '<dependency id="magic-wormhole.portable" version=".*" />', '<dependency id="magic-wormhole.portable" version="${{ steps.check_build.outputs.version }}" />'} |`
-            Out-File ./magic-wormhole.nuspec
-
-      - name: Chocolatey pack
-        if: ${{ steps.check_build.outputs.release_exists == '0' }}
-        working-directory: magic-wormhole
-        run: choco pack -v
-
-      - name: Chocolatey push
-        if: ${{ steps.check_build.outputs.release_exists == '0' }}
-        working-directory: magic-wormhole
-        run: choco push -v --key=${{ secrets.CHOCOLATEY_API_KEY }} -s="https://push.chocolatey.org/"
-
-      - name: Upload chocolatey folder
-        if: ${{ steps.check_build.outputs.release_exists == '0' }}
-        uses: actions/upload-artifact@v3
-        with:
-          name: chocolatey
-          path: magic-wormhole

@@ -1,0 +1,17 @@
+name: "Build environment"
+description: "Setup build environment values"
+
+inputs:
+  version:
+    description: "Build version (Ex: 1.2.3.4-dev)"
+
+outputs:
+  version:
+    description: "Build version"
+
+  exists:
+    description: "Path to send files write files to on drive"
+
+runs:
+  using: "node20"
+  main: "dist/index.js"
