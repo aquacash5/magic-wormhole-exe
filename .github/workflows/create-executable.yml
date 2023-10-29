@@ -40,7 +40,7 @@ jobs:
 
       - name: Create release
         id: create-release
-        if: steps.check-build.outputs.exists == false
+        if: ${{ steps.check-build.outputs.exists == false }}
         uses: actions/create-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -51,7 +51,7 @@ jobs:
           prerelease: false
 
       - name: Upload wormhole executable
-        if: steps.check-build.outputs.exists == false
+        if: ${{ steps.check-build.outputs.exists == false }}
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -62,7 +62,7 @@ jobs:
           asset_content_type: application/octet-stream
 
       - name: Upload checksums
-        if: steps.check-build.outputs.exists == false
+        if: ${{ steps.check-build.outputs.exists == false }}
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
