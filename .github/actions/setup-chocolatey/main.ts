@@ -69,42 +69,33 @@ Get-ChocolateyWebFile -PackageName "$packageName" \`
   return chocolateyInstall;
 }
 
-function nuspec(
-  id: string,
-  title: string,
-  version: string,
-  dependency: boolean
-): string {
-  const dependencySection: string = dependency
-    ? `<dependencies><dependency id="magic-wormhole.portable" version="${version}" /></dependencies>`
-    : "";
+function nuspec(version: string): string {
   const xml = `<?xml version="1.0"?>
-  <package xmlns="http://schemas.microsoft.com/packaging/2011/08/nuspec.xsd">
-    <metadata>
-      <id>${id}</id>
-      <version>${version}</version>
-      <title>${title}</title>
-      <authors>aquacash5,vaporwave9,warner</authors>
-      <owners>aquacash5</owners>
-      <licenseUrl>https://github.com/magic-wormhole/magic-wormhole/blob/master/LICENSE</licenseUrl>
-      <projectUrl>https://github.com/aquacash5/magic-wormhole-exe</projectUrl>
-      <iconUrl>https://cdn.statically.io/gh/aquacash5/magic-wormhole-exe/main/logo.png</iconUrl>
-      <requireLicenseAcceptance>false</requireLicenseAcceptance>
-      <description>Get things from one computer to another, safely.
+<package xmlns="http://schemas.microsoft.com/packaging/2011/08/nuspec.xsd">
+  <metadata>
+    <id>magic-wormhole</id>
+    <version>${version}</version>
+    <title>Magic Wormhole</title>
+    <authors>aquacash5,vaporwave9,warner</authors>
+    <owners>aquacash5</owners>
+    <licenseUrl>https://github.com/magic-wormhole/magic-wormhole/blob/master/LICENSE</licenseUrl>
+    <projectUrl>https://github.com/aquacash5/magic-wormhole-exe</projectUrl>
+    <iconUrl>https://cdn.statically.io/gh/aquacash5/magic-wormhole-exe/main/logo.png</iconUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>Get things from one computer to another, safely.
 
-  This package provides a library and a command-line tool named wormhole, which makes it possible to get arbitrary-sized files and directories (or short pieces of text) from one computer to another. The two endpoints are identified by using identical "wormhole codes": in general, the sending machine generates and displays the code, which must then be typed into the receiving machine.
+This package provides a library and a command-line tool named wormhole, which makes it possible to get arbitrary-sized files and directories (or short pieces of text) from one computer to another. The two endpoints are identified by using identical "wormhole codes": in general, the sending machine generates and displays the code, which must then be typed into the receiving machine.
 
-  The codes are short and human-pronounceable, using a phonetically-distinct wordlist. The receiving side offers tab-completion on the codewords, so usually only a few characters must be typed. Wormhole codes are single-use and do not need to be memorized.</description>
-      <summary>Get things from one computer to another, safely.</summary>
-      <releaseNotes>[Software Changelog](https://github.com/magic-wormhole/magic-wormhole/blob/master/NEWS.md)
-  [Package Changelog](https://github.com/aquacash5/magic-wormhole-exe)</releaseNotes>
-      <tags>filetransfer</tags>
-      <projectSourceUrl>https://github.com/magic-wormhole/magic-wormhole</projectSourceUrl>
-      <packageSourceUrl>https://github.com/aquacash5/magic-wormhole-exe</packageSourceUrl>
-      <bugTrackerUrl>https://github.com/aquacash5/magic-wormhole-exe/issues</bugTrackerUrl>
-      ${dependencySection}
-    </metadata>
-  </package>
+The codes are short and human-pronounceable, using a phonetically-distinct wordlist. The receiving side offers tab-completion on the codewords, so usually only a few characters must be typed. Wormhole codes are single-use and do not need to be memorized.</description>
+    <summary>Get things from one computer to another, safely.</summary>
+    <releaseNotes>[Software Changelog](https://github.com/magic-wormhole/magic-wormhole/blob/master/NEWS.md)
+[Package Changelog](https://github.com/aquacash5/magic-wormhole-exe)</releaseNotes>
+    <tags>filetransfer</tags>
+    <projectSourceUrl>https://github.com/magic-wormhole/magic-wormhole</projectSourceUrl>
+    <packageSourceUrl>https://github.com/aquacash5/magic-wormhole-exe</packageSourceUrl>
+    <bugTrackerUrl>https://github.com/aquacash5/magic-wormhole-exe/issues</bugTrackerUrl>
+  </metadata>
+</package>
 `;
   debugValue("xml", xml);
   return xml;
@@ -127,48 +118,20 @@ async function main() {
   const repoDir = path.resolve(getRepoToplevel(), "temp");
 
   debug("setup directories...");
-  await Promise.all([
-    mkdir(path.resolve(repoDir, "magic-wormhole", "tools"), {
-      recursive: true,
-    }),
-    mkdir(path.resolve(repoDir, "magic-wormhole.portable", "tools"), {
-      recursive: true,
-    }),
-  ]);
+  await mkdir(path.resolve(repoDir, "magic-wormhole", "tools"), {
+    recursive: true,
+  });
 
-  debug("writing files...");
-  await Promise.all([
-    writeFile(
-      path.resolve(repoDir, "magic-wormhole", "magic-wormhole.nuspec"),
-      nuspec("magic-wormhole", "Magic Wormhole", version, true)
-    ),
-    writeFile(
-      path.resolve(repoDir, "magic-wormhole", "tools", "chocolateyinstall.ps1"),
-      "# this is a virtual package."
-    ),
-    writeFile(
-      path.resolve(
-        repoDir,
-        "magic-wormhole.portable",
-        "tools",
-        "chocolateyinstall.ps1"
-      ),
-      chocolateyInstallPs1(version, checksum)
-    ),
-    writeFile(
-      path.resolve(
-        repoDir,
-        "magic-wormhole.portable",
-        "magic-wormhole.portable.nuspec"
-      ),
-      nuspec(
-        "magic-wormhole.portable",
-        "Magic Wormhole (Portable)",
-        version,
-        false
-      )
-    ),
-  ]);
+  debug("writing chocolateyinstall.ps1...");
+  await writeFile(
+    path.resolve(repoDir, "magic-wormhole", "tools", "chocolateyinstall.ps1"),
+    chocolateyInstallPs1(version, checksum)
+  );
+  debug("writing magic-wormhole.nuspec...");
+  await writeFile(
+    path.resolve(repoDir, "magic-wormhole", "magic-wormhole.nuspec"),
+    nuspec(version)
+  );
 }
 
 main().catch((e) => setFailed(e));

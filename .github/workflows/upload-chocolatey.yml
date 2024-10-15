@@ -18,29 +18,15 @@ jobs:
         with:
           version: ${{ inputs.version }}
 
-      - name: Chocolatey pack (portable)
-        working-directory: temp/magic-wormhole.portable
-        run: choco pack -v
-
       - name: Chocolatey pack
         working-directory: temp/magic-wormhole
         run: choco pack -v
-
-      - name: Upload chocolatey (portable) folder
-        uses: actions/upload-artifact@v3
-        with:
-          name: chocolatey-portable
-          path: temp/magic-wormhole.portable
 
       - name: Upload chocolatey folder
         uses: actions/upload-artifact@v3
         with:
           name: chocolatey
           path: temp/magic-wormhole
-
-      - name: Chocolatey push (portable)
-        working-directory: temp/magic-wormhole.portable
-        run: choco push -v --key=${{ secrets.CHOCOLATEY_API_KEY }} -s="https://push.chocolatey.org/"
 
       - name: Chocolatey push
         working-directory: temp/magic-wormhole
