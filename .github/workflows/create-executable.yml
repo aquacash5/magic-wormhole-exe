@@ -11,7 +11,7 @@ jobs:
     runs-on: windows-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Check build
         id: check-build
@@ -33,41 +33,18 @@ jobs:
           echo "SHA256 $SHA256_CHECKSUM wormhole.exe" >> wormhole.exe.checksum.txt
 
       - name: Upload executable artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: wormhole
           path: wormhole.*
 
       - name: Create release
-        id: create-release
-        if: ${{ steps.check-build.outputs.exists == 'false' }}
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        uses: softprops/action-gh-release@v2
         with:
+          name: ${{ steps.check-build.outputs.version }}
           tag_name: ${{ steps.check-build.outputs.version }}
-          release_name: Release ${{ steps.check-build.outputs.version }}
           draft: false
           prerelease: false
-
-      - name: Upload wormhole executable
-        if: ${{ steps.check-build.outputs.exists == 'false' }}
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create-release.outputs.upload_url }}
-          asset_path: ./wormhole.exe
-          asset_name: wormhole.exe
-          asset_content_type: application/octet-stream
-
-      - name: Upload checksums
-        if: ${{ steps.check-build.outputs.exists == 'false' }}
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create-release.outputs.upload_url }}
-          asset_path: ./wormhole.exe.checksum.txt
-          asset_name: wormhole.exe.checksum.txt
-          asset_content_type: text/plain
+          files: |
+            ./wormhole.exe
+            ./wormhole.exe.checksum.txt

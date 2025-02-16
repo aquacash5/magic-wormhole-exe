@@ -11535,6 +11535,14 @@ const { isUint8Array, isArrayBuffer } = __nccwpck_require__(8253)
 const { File: UndiciFile } = __nccwpck_require__(3041)
 const { parseMIMEType, serializeAMimeType } = __nccwpck_require__(4322)
 
+let random
+try {
+  const crypto = __nccwpck_require__(7598)
+  random = (max) => crypto.randomInt(0, max)
+} catch {
+  random = (max) => Math.floor(Math.random(max))
+}
+
 let ReadableStream = globalThis.ReadableStream
 
 /** @type {globalThis['File']} */
@@ -11620,7 +11628,7 @@ function extractBody (object, keepalive = false) {
     // Set source to a copy of the bytes held by object.
     source = new Uint8Array(object.buffer.slice(object.byteOffset, object.byteOffset + object.byteLength))
   } else if (util.isFormDataLike(object)) {
-    const boundary = `----formdata-undici-0${`${Math.floor(Math.random() * 1e11)}`.padStart(11, '0')}`
+    const boundary = `----formdata-undici-0${`${random(1e11)}`.padStart(11, '0')}`
     const prefix = `--${boundary}\r\nContent-Disposition: form-data`
 
     /*! formdata-polyfill. MIT License. Jimmy Wärting <https://jimmy.warting.se/opensource> */
@@ -25739,6 +25747,14 @@ module.exports = require("net");
 
 /***/ }),
 
+/***/ 7598:
+/***/ ((module) => {
+
+"use strict";
+module.exports = require("node:crypto");
+
+/***/ }),
+
 /***/ 8474:
 /***/ ((module) => {
 
@@ -27749,6 +27765,9 @@ const quotelessJson = (obj) => {
     return json.replace(/"([^"]+)":/g, "$1:");
 };
 class ZodError extends Error {
+    get errors() {
+        return this.issues;
+    }
     constructor(issues) {
         super();
         this.issues = [];
@@ -27768,9 +27787,6 @@ class ZodError extends Error {
         }
         this.name = "ZodError";
         this.issues = issues;
-    }
-    get errors() {
-        return this.issues;
     }
     format(_mapper) {
         const mapper = _mapper ||
@@ -28027,9 +28043,9 @@ function addIssueToContext(ctx, issueData) {
         data: ctx.data,
         path: ctx.path,
         errorMaps: [
-            ctx.common.contextualErrorMap,
-            ctx.schemaErrorMap,
-            overrideMap,
+            ctx.common.contextualErrorMap, // contextual error map is first priority
+            ctx.schemaErrorMap, // then schema-bound map if available
+            overrideMap, // then global override map
             overrideMap === errorMap ? undefined : errorMap, // then global default map
         ].filter((x) => !!x),
     });
@@ -28205,35 +28221,6 @@ function processCreateParams(params) {
     return { errorMap: customMap, description };
 }
 class ZodType {
-    constructor(def) {
-        /** Alias of safeParseAsync */
-        this.spa = this.safeParseAsync;
-        this._def = def;
-        this.parse = this.parse.bind(this);
-        this.safeParse = this.safeParse.bind(this);
-        this.parseAsync = this.parseAsync.bind(this);
-        this.safeParseAsync = this.safeParseAsync.bind(this);
-        this.spa = this.spa.bind(this);
-        this.refine = this.refine.bind(this);
-        this.refinement = this.refinement.bind(this);
-        this.superRefine = this.superRefine.bind(this);
-        this.optional = this.optional.bind(this);
-        this.nullable = this.nullable.bind(this);
-        this.nullish = this.nullish.bind(this);
-        this.array = this.array.bind(this);
-        this.promise = this.promise.bind(this);
-        this.or = this.or.bind(this);
-        this.and = this.and.bind(this);
-        this.transform = this.transform.bind(this);
-        this.brand = this.brand.bind(this);
-        this.default = this.default.bind(this);
-        this.catch = this.catch.bind(this);
-        this.describe = this.describe.bind(this);
-        this.pipe = this.pipe.bind(this);
-        this.readonly = this.readonly.bind(this);
-        this.isNullable = this.isNullable.bind(this);
-        this.isOptional = this.isOptional.bind(this);
-    }
     get description() {
         return this._def.description;
     }
@@ -28296,6 +28283,48 @@ class ZodType {
         };
         const result = this._parseSync({ data, path: ctx.path, parent: ctx });
         return handleResult(ctx, result);
+    }
+    "~validate"(data) {
+        var _a, _b;
+        const ctx = {
+            common: {
+                issues: [],
+                async: !!this["~standard"].async,
+            },
+            path: [],
+            schemaErrorMap: this._def.errorMap,
+            parent: null,
+            data,
+            parsedType: getParsedType(data),
+        };
+        if (!this["~standard"].async) {
+            try {
+                const result = this._parseSync({ data, path: [], parent: ctx });
+                return isValid(result)
+                    ? {
+                        value: result.value,
+                    }
+                    : {
+                        issues: ctx.common.issues,
+                    };
+            }
+            catch (err) {
+                if ((_b = (_a = err === null || err === void 0 ? void 0 : err.message) === null || _a === void 0 ? void 0 : _a.toLowerCase()) === null || _b === void 0 ? void 0 : _b.includes("encountered")) {
+                    this["~standard"].async = true;
+                }
+                ctx.common = {
+                    issues: [],
+                    async: true,
+                };
+            }
+        }
+        return this._parseAsync({ data, path: [], parent: ctx }).then((result) => isValid(result)
+            ? {
+                value: result.value,
+            }
+            : {
+                issues: ctx.common.issues,
+            });
     }
     async parseAsync(data, params) {
         const result = await this.safeParseAsync(data, params);
@@ -28383,6 +28412,40 @@ class ZodType {
     superRefine(refinement) {
         return this._refinement(refinement);
     }
+    constructor(def) {
+        /** Alias of safeParseAsync */
+        this.spa = this.safeParseAsync;
+        this._def = def;
+        this.parse = this.parse.bind(this);
+        this.safeParse = this.safeParse.bind(this);
+        this.parseAsync = this.parseAsync.bind(this);
+        this.safeParseAsync = this.safeParseAsync.bind(this);
+        this.spa = this.spa.bind(this);
+        this.refine = this.refine.bind(this);
+        this.refinement = this.refinement.bind(this);
+        this.superRefine = this.superRefine.bind(this);
+        this.optional = this.optional.bind(this);
+        this.nullable = this.nullable.bind(this);
+        this.nullish = this.nullish.bind(this);
+        this.array = this.array.bind(this);
+        this.promise = this.promise.bind(this);
+        this.or = this.or.bind(this);
+        this.and = this.and.bind(this);
+        this.transform = this.transform.bind(this);
+        this.brand = this.brand.bind(this);
+        this.default = this.default.bind(this);
+        this.catch = this.catch.bind(this);
+        this.describe = this.describe.bind(this);
+        this.pipe = this.pipe.bind(this);
+        this.readonly = this.readonly.bind(this);
+        this.isNullable = this.isNullable.bind(this);
+        this.isOptional = this.isOptional.bind(this);
+        this["~standard"] = {
+            version: 1,
+            vendor: "zod",
+            validate: (data) => this["~validate"](data),
+        };
+    }
     optional() {
         return ZodOptional.create(this, this._def);
     }
@@ -28393,7 +28456,7 @@ class ZodType {
         return this.nullable().optional();
     }
     array() {
-        return ZodArray.create(this, this._def);
+        return ZodArray.create(this);
     }
     promise() {
         return ZodPromise.create(this, this._def);
@@ -28459,11 +28522,12 @@ class ZodType {
 }
 const cuidRegex = /^c[^\s-]{8,}$/i;
 const cuid2Regex = /^[0-9a-z]+$/;
-const ulidRegex = /^[0-9A-HJKMNP-TV-Z]{26}$/;
+const ulidRegex = /^[0-9A-HJKMNP-TV-Z]{26}$/i;
 // const uuidRegex =
 //   /^([a-f0-9]{8}-[a-f0-9]{4}-[1-5][a-f0-9]{3}-[a-f0-9]{4}-[a-f0-9]{12}|00000000-0000-0000-0000-000000000000)$/i;
 const uuidRegex = /^[0-9a-fA-F]{8}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{12}$/i;
 const nanoidRegex = /^[a-z0-9_-]{21}$/i;
+const jwtRegex = /^[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+\.[A-Za-z0-9-_]*$/;
 const durationRegex = /^[-+]?P(?!$)(?:(?:[-+]?\d+Y)|(?:[-+]?\d+[.,]\d+Y$))?(?:(?:[-+]?\d+M)|(?:[-+]?\d+[.,]\d+M$))?(?:(?:[-+]?\d+W)|(?:[-+]?\d+[.,]\d+W$))?(?:(?:[-+]?\d+D)|(?:[-+]?\d+[.,]\d+D$))?(?:T(?=[\d+-])(?:(?:[-+]?\d+H)|(?:[-+]?\d+[.,]\d+H$))?(?:(?:[-+]?\d+M)|(?:[-+]?\d+[.,]\d+M$))?(?:[-+]?\d+(?:[.,]\d+)?S)?)??$/;
 // from https://stackoverflow.com/a/46181/1550155
 // old version: too slow, didn't support unicode
@@ -28485,9 +28549,15 @@ const _emojiRegex = `^(\\p{Extended_Pictographic}|\\p{Emoji_Component})+$`;
 let emojiRegex;
 // faster, simpler, safer
 const ipv4Regex = /^(?:(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9][0-9]|[0-9])\.){3}(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9][0-9]|[0-9])$/;
-const ipv6Regex = /^(([a-f0-9]{1,4}:){7}|::([a-f0-9]{1,4}:){0,6}|([a-f0-9]{1,4}:){1}:([a-f0-9]{1,4}:){0,5}|([a-f0-9]{1,4}:){2}:([a-f0-9]{1,4}:){0,4}|([a-f0-9]{1,4}:){3}:([a-f0-9]{1,4}:){0,3}|([a-f0-9]{1,4}:){4}:([a-f0-9]{1,4}:){0,2}|([a-f0-9]{1,4}:){5}:([a-f0-9]{1,4}:){0,1})([a-f0-9]{1,4}|(((25[0-5])|(2[0-4][0-9])|(1[0-9]{2})|([0-9]{1,2}))\.){3}((25[0-5])|(2[0-4][0-9])|(1[0-9]{2})|([0-9]{1,2})))$/;
+const ipv4CidrRegex = /^(?:(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9][0-9]|[0-9])\.){3}(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9][0-9]|[0-9])\/(3[0-2]|[12]?[0-9])$/;
+// const ipv6Regex =
+// /^(([a-f0-9]{1,4}:){7}|::([a-f0-9]{1,4}:){0,6}|([a-f0-9]{1,4}:){1}:([a-f0-9]{1,4}:){0,5}|([a-f0-9]{1,4}:){2}:([a-f0-9]{1,4}:){0,4}|([a-f0-9]{1,4}:){3}:([a-f0-9]{1,4}:){0,3}|([a-f0-9]{1,4}:){4}:([a-f0-9]{1,4}:){0,2}|([a-f0-9]{1,4}:){5}:([a-f0-9]{1,4}:){0,1})([a-f0-9]{1,4}|(((25[0-5])|(2[0-4][0-9])|(1[0-9]{2})|([0-9]{1,2}))\.){3}((25[0-5])|(2[0-4][0-9])|(1[0-9]{2})|([0-9]{1,2})))$/;
+const ipv6Regex = /^(([0-9a-fA-F]{1,4}:){7,7}[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,7}:|([0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,5}(:[0-9a-fA-F]{1,4}){1,2}|([0-9a-fA-F]{1,4}:){1,4}(:[0-9a-fA-F]{1,4}){1,3}|([0-9a-fA-F]{1,4}:){1,3}(:[0-9a-fA-F]{1,4}){1,4}|([0-9a-fA-F]{1,4}:){1,2}(:[0-9a-fA-F]{1,4}){1,5}|[0-9a-fA-F]{1,4}:((:[0-9a-fA-F]{1,4}){1,6})|:((:[0-9a-fA-F]{1,4}){1,7}|:)|fe80:(:[0-9a-fA-F]{0,4}){0,4}%[0-9a-zA-Z]{1,}|::(ffff(:0{1,4}){0,1}:){0,1}((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])|([0-9a-fA-F]{1,4}:){1,4}:((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9]))$/;
+const ipv6CidrRegex = /^(([0-9a-fA-F]{1,4}:){7,7}[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,7}:|([0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,5}(:[0-9a-fA-F]{1,4}){1,2}|([0-9a-fA-F]{1,4}:){1,4}(:[0-9a-fA-F]{1,4}){1,3}|([0-9a-fA-F]{1,4}:){1,3}(:[0-9a-fA-F]{1,4}){1,4}|([0-9a-fA-F]{1,4}:){1,2}(:[0-9a-fA-F]{1,4}){1,5}|[0-9a-fA-F]{1,4}:((:[0-9a-fA-F]{1,4}){1,6})|:((:[0-9a-fA-F]{1,4}){1,7}|:)|fe80:(:[0-9a-fA-F]{0,4}){0,4}%[0-9a-zA-Z]{1,}|::(ffff(:0{1,4}){0,1}:){0,1}((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])|([0-9a-fA-F]{1,4}:){1,4}:((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9]))\/(12[0-8]|1[01][0-9]|[1-9]?[0-9])$/;
 // https://stackoverflow.com/questions/7860392/determine-if-string-is-in-base64-using-javascript
 const base64Regex = /^([0-9a-zA-Z+/]{4})*(([0-9a-zA-Z+/]{2}==)|([0-9a-zA-Z+/]{3}=))?$/;
+// https://base64.guru/standards/base64url
+const base64urlRegex = /^([0-9a-zA-Z-_]{4})*(([0-9a-zA-Z-_]{2}(==)?)|([0-9a-zA-Z-_]{3}(=)?))?$/;
 // simple
 // const dateRegexSource = `\\d{4}-\\d{2}-\\d{2}`;
 // no leap year validation
@@ -28524,6 +28594,38 @@ function isValidIP(ip, version) {
         return true;
     }
     if ((version === "v6" || !version) && ipv6Regex.test(ip)) {
+        return true;
+    }
+    return false;
+}
+function isValidJWT(jwt, alg) {
+    if (!jwtRegex.test(jwt))
+        return false;
+    try {
+        const [header] = jwt.split(".");
+        // Convert base64url to base64
+        const base64 = header
+            .replace(/-/g, "+")
+            .replace(/_/g, "/")
+            .padEnd(header.length + ((4 - (header.length % 4)) % 4), "=");
+        const decoded = JSON.parse(atob(base64));
+        if (typeof decoded !== "object" || decoded === null)
+            return false;
+        if (!decoded.typ || !decoded.alg)
+            return false;
+        if (alg && decoded.alg !== alg)
+            return false;
+        return true;
+    }
+    catch (_a) {
+        return false;
+    }
+}
+function isValidCidr(ip, version) {
+    if ((version === "v4" || !version) && ipv4CidrRegex.test(ip)) {
+        return true;
+    }
+    if ((version === "v6" || !version) && ipv6CidrRegex.test(ip)) {
         return true;
     }
     return false;
@@ -28809,11 +28911,44 @@ class ZodString extends ZodType {
                     status.dirty();
                 }
             }
+            else if (check.kind === "jwt") {
+                if (!isValidJWT(input.data, check.alg)) {
+                    ctx = this._getOrReturnCtx(input, ctx);
+                    addIssueToContext(ctx, {
+                        validation: "jwt",
+                        code: ZodIssueCode.invalid_string,
+                        message: check.message,
+                    });
+                    status.dirty();
+                }
+            }
+            else if (check.kind === "cidr") {
+                if (!isValidCidr(input.data, check.version)) {
+                    ctx = this._getOrReturnCtx(input, ctx);
+                    addIssueToContext(ctx, {
+                        validation: "cidr",
+                        code: ZodIssueCode.invalid_string,
+                        message: check.message,
+                    });
+                    status.dirty();
+                }
+            }
             else if (check.kind === "base64") {
                 if (!base64Regex.test(input.data)) {
                     ctx = this._getOrReturnCtx(input, ctx);
                     addIssueToContext(ctx, {
                         validation: "base64",
+                        code: ZodIssueCode.invalid_string,
+                        message: check.message,
+                    });
+                    status.dirty();
+                }
+            }
+            else if (check.kind === "base64url") {
+                if (!base64urlRegex.test(input.data)) {
+                    ctx = this._getOrReturnCtx(input, ctx);
+                    addIssueToContext(ctx, {
+                        validation: "base64url",
                         code: ZodIssueCode.invalid_string,
                         message: check.message,
                     });
@@ -28866,8 +29001,21 @@ class ZodString extends ZodType {
     base64(message) {
         return this._addCheck({ kind: "base64", ...errorUtil.errToObj(message) });
     }
+    base64url(message) {
+        // base64url encoding is a modification of base64 that can safely be used in URLs and filenames
+        return this._addCheck({
+            kind: "base64url",
+            ...errorUtil.errToObj(message),
+        });
+    }
+    jwt(options) {
+        return this._addCheck({ kind: "jwt", ...errorUtil.errToObj(options) });
+    }
     ip(options) {
         return this._addCheck({ kind: "ip", ...errorUtil.errToObj(options) });
+    }
+    cidr(options) {
+        return this._addCheck({ kind: "cidr", ...errorUtil.errToObj(options) });
     }
     datetime(options) {
         var _a, _b;
@@ -28959,8 +29107,7 @@ class ZodString extends ZodType {
         });
     }
     /**
-     * @deprecated Use z.string().min(1) instead.
-     * @see {@link ZodString.min}
+     * Equivalent to `.min(1)`
      */
     nonempty(message) {
         return this.min(1, errorUtil.errToObj(message));
@@ -29022,8 +29169,15 @@ class ZodString extends ZodType {
     get isIP() {
         return !!this._def.checks.find((ch) => ch.kind === "ip");
     }
+    get isCIDR() {
+        return !!this._def.checks.find((ch) => ch.kind === "cidr");
+    }
     get isBase64() {
         return !!this._def.checks.find((ch) => ch.kind === "base64");
+    }
+    get isBase64url() {
+        // base64url encoding is a modification of base64 that can safely be used in URLs and filenames
+        return !!this._def.checks.find((ch) => ch.kind === "base64url");
     }
     get minLength() {
         let min = null;
@@ -29317,17 +29471,16 @@ class ZodBigInt extends ZodType {
     }
     _parse(input) {
         if (this._def.coerce) {
-            input.data = BigInt(input.data);
+            try {
+                input.data = BigInt(input.data);
+            }
+            catch (_a) {
+                return this._getInvalidInput(input);
+            }
         }
         const parsedType = this._getType(input);
         if (parsedType !== ZodParsedType.bigint) {
-            const ctx = this._getOrReturnCtx(input);
-            addIssueToContext(ctx, {
-                code: ZodIssueCode.invalid_type,
-                expected: ZodParsedType.bigint,
-                received: ctx.parsedType,
-            });
-            return INVALID;
+            return this._getInvalidInput(input);
         }
         let ctx = undefined;
         const status = new ParseStatus();
@@ -29380,6 +29533,15 @@ class ZodBigInt extends ZodType {
             }
         }
         return { status: status.value, value: input.data };
+    }
+    _getInvalidInput(input) {
+        const ctx = this._getOrReturnCtx(input);
+        addIssueToContext(ctx, {
+            code: ZodIssueCode.invalid_type,
+            expected: ZodParsedType.bigint,
+            received: ctx.parsedType,
+        });
+        return INVALID;
     }
     gte(value, message) {
         return this.setLimit("min", value, true, errorUtil.toString(message));
@@ -31587,7 +31749,23 @@ ZodReadonly.create = (type, params) => {
         ...processCreateParams(params),
     });
 };
-function custom(check, params = {}, 
+////////////////////////////////////////
+////////////////////////////////////////
+//////////                    //////////
+//////////      z.custom      //////////
+//////////                    //////////
+////////////////////////////////////////
+////////////////////////////////////////
+function cleanParams(params, data) {
+    const p = typeof params === "function"
+        ? params(data)
+        : typeof params === "string"
+            ? { message: params }
+            : params;
+    const p2 = typeof p === "string" ? { message: p } : p;
+    return p2;
+}
+function custom(check, _params = {}, 
 /**
  * @deprecated
  *
@@ -31602,16 +31780,23 @@ fatal) {
     if (check)
         return ZodAny.create().superRefine((data, ctx) => {
             var _a, _b;
-            if (!check(data)) {
-                const p = typeof params === "function"
-                    ? params(data)
-                    : typeof params === "string"
-                        ? { message: params }
-                        : params;
-                const _fatal = (_b = (_a = p.fatal) !== null && _a !== void 0 ? _a : fatal) !== null && _b !== void 0 ? _b : true;
-                const p2 = typeof p === "string" ? { message: p } : p;
-                ctx.addIssue({ code: "custom", ...p2, fatal: _fatal });
+            const r = check(data);
+            if (r instanceof Promise) {
+                return r.then((r) => {
+                    var _a, _b;
+                    if (!r) {
+                        const params = cleanParams(_params, data);
+                        const _fatal = (_b = (_a = params.fatal) !== null && _a !== void 0 ? _a : fatal) !== null && _b !== void 0 ? _b : true;
+                        ctx.addIssue({ code: "custom", ...params, fatal: _fatal });
+                    }
+                });
             }
+            if (!r) {
+                const params = cleanParams(_params, data);
+                const _fatal = (_b = (_a = params.fatal) !== null && _a !== void 0 ? _a : fatal) !== null && _b !== void 0 ? _b : true;
+                ctx.addIssue({ code: "custom", ...params, fatal: _fatal });
+            }
+            return;
         });
     return ZodAny.create();
 }
