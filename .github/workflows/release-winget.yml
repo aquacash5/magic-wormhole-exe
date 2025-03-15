@@ -12,7 +12,8 @@ jobs:
   upload-chocolatey:
     runs-on: windows-latest
     steps:
-      - uses: vedantmgoyal9/winget-releaser@main
+      - name: Release to WinGet
+        uses: vedantmgoyal9/winget-releaser@main
         with:
           identifier: magic-wormhole.magic-wormhole
           max-versions-to-keep: 5
