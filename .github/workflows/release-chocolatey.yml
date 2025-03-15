@@ -1,10 +1,12 @@
-name: Upload Chocolatey
+name: Release Chocolatey
 
 on:
   workflow_dispatch:
     inputs:
       version:
-        description: "Version of magic-wormhole to build"
+        description: "Version of magic-wormhole to release"
+  release:
+    types: [released]
 
 jobs:
   upload-chocolatey:
@@ -16,7 +18,7 @@ jobs:
       - name: Setup Chocolatey directories
         uses: ./.github/actions/setup-chocolatey
         with:
-          version: ${{ inputs.version }}
+          version: ${{ inputs.version || github.event.release.tag_name || github.ref_name }}
 
       - name: Chocolatey pack
         working-directory: temp/magic-wormhole

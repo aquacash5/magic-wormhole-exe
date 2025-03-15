@@ -1,0 +1,21 @@
+name: Release WinGet
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version of magic-wormhole to release"
+  release:
+    types: [released]
+
+jobs:
+  upload-chocolatey:
+    runs-on: windows-latest
+    steps:
+      - name: Release to WinGet
+        uses: vedantmgoyal9/winget-releaser@main
+        with:
+          identifier: magic-wormhole.magic-wormhole
+          max-versions-to-keep: 5
+          release-tag: ${{ inputs.version || github.event.release.tag_name || github.ref_name }}
+          token: ${{ secrets.WINGET_TOKEN }}
