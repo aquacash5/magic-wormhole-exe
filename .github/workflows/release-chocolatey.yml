@@ -1,0 +1,35 @@
+name: Release Chocolatey
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version of magic-wormhole to release"
+  release:
+    types: [released]
+
+jobs:
+  upload-chocolatey:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Chocolatey directories
+        uses: ./.github/actions/setup-chocolatey
+        with:
+          version: ${{ inputs.version || github.event.release.tag_name || github.ref_name }}
+
+      - name: Chocolatey pack
+        working-directory: temp/magic-wormhole
+        run: choco pack -v
+
+      - name: Upload chocolatey folder
+        uses: actions/upload-artifact@v4
+        with:
+          name: chocolatey
+          path: temp/magic-wormhole
+
+      - name: Chocolatey push
+        working-directory: temp/magic-wormhole
+        run: choco push -v --key=${{ secrets.CHOCOLATEY_API_KEY }} -s="https://push.chocolatey.org/"
