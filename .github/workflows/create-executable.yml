@@ -7,6 +7,9 @@ on:
         description: Version of magic-wormhole to build
       release-version:
         description: The version to use for release
+      python-version:
+        description: The version of python use in build
+        default: '3.13'
 
 jobs:
   create-executable:
@@ -14,6 +17,11 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ input.python-version }}
 
       - name: Check build
         id: check-build
