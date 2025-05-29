@@ -9,7 +9,7 @@ on:
     types: [released]
 
 jobs:
-  upload-chocolatey:
+  upload-winget:
     runs-on: windows-latest
     steps:
       - name: Release to WinGet
