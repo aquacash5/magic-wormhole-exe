@@ -4,7 +4,9 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: "Version of magic-wormhole to build"
+        description: Version of magic-wormhole to build
+      release-version:
+        description: The version to use for release
 
 jobs:
   create-executable:
@@ -32,6 +34,9 @@ jobs:
           echo "SHA1 $SHA1_CHECKSUM wormhole.exe" >> wormhole.exe.checksum.txt
           echo "SHA256 $SHA256_CHECKSUM wormhole.exe" >> wormhole.exe.checksum.txt
 
+      - name: Test executable
+        run: wormhole.exe --help
+
       - name: Upload executable artifact
         uses: actions/upload-artifact@v4
         with:
@@ -41,8 +46,8 @@ jobs:
       - name: Create release
         uses: softprops/action-gh-release@v2
         with:
-          name: ${{ steps.check-build.outputs.version }}
-          tag_name: ${{ steps.check-build.outputs.version }}
+          name: ${{ inputs.version || steps.check-build.outputs.version }}
+          tag_name: ${{ inputs.version || steps.check-build.outputs.version }}
           draft: false
           prerelease: false
           files: |
