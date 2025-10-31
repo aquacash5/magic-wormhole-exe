@@ -10,6 +10,15 @@ const GithubReleases = z.array(
   })
 );
 
+function onError(err: unknown) {
+  if (typeof err === "string" || err instanceof Error) {
+    setFailed(err);
+  } else {
+    console.error("Unknown error kind:", err);
+    setFailed("Unknown failure");
+  }
+}
+
 function debugValue(name: string, value: any) {
   debug(`${name}: ${JSON.stringify(value)}`);
 }
@@ -134,4 +143,4 @@ async function main() {
   );
 }
 
-main().catch((e) => setFailed(e));
+main().catch(onError);
