@@ -12,6 +12,15 @@ function debugValue(name: string, value: any) {
   debug(`${name}: ${JSON.stringify(value)}`);
 }
 
+function onError(err: unknown) {
+  if (typeof err === "string" || err instanceof Error) {
+    setFailed(err);
+  } else {
+    console.error("Unknown error kind:", err);
+    setFailed("Unknown failure");
+  }
+}
+
 async function getGithubReleases(): Promise<string[]> {
   const response = await fetch(
     "https://api.github.com/repos/aquacash5/magic-wormhole-exe/releases"
@@ -41,4 +50,4 @@ async function main() {
   setOutput("version", finalVersion);
 }
 
-main().catch((e) => setFailed(e));
+main().catch(onError);
