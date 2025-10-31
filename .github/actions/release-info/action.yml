@@ -1,0 +1,14 @@
+name: "Release Info"
+description: "Get the release info based on workflow inputs"
+
+inputs:
+  version:
+    description: "Release version (Ex: 1.2.3.4-dev)"
+
+outputs:
+  version:
+    description: "Release version"
+
+runs:
+  using: "node20"
+  main: "dist/index.js"

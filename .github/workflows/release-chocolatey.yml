@@ -15,10 +15,16 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Get Release Info
+        id: release-info
+        uses: ./.github/actions/release-info
+        with:
+          version: ${{ inputs.version || github.event.release.tag_name }}
+
       - name: Setup Chocolatey directories
         uses: ./.github/actions/setup-chocolatey
         with:
-          version: ${{ inputs.version || github.event.release.tag_name || github.ref_name }}
+          version: ${{ step.release-info.outputs.version }}
 
       - name: Chocolatey pack
         working-directory: temp/magic-wormhole

@@ -12,9 +12,18 @@ jobs:
   upload-winget:
     runs-on: windows-latest
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Get Release Info
+        id: release-info
+        uses: ./.github/actions/release-info
+        with:
+          version: ${{ inputs.version || github.event.release.tag_name }}
+
       - name: Release to WinGet
         uses: vedantmgoyal9/winget-releaser@main
         with:
           identifier: magic-wormhole.magic-wormhole
-          release-tag: ${{ inputs.version || github.event.release.tag_name || github.ref_name }}
+          release-tag: ${{ step.release-info.outputs.version }}
           token: ${{ secrets.WINGET_TOKEN }}
