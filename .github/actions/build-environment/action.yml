@@ -13,5 +13,5 @@ outputs:
     description: "Path to send files write files to on drive"
 
 runs:
-  using: "node20"
+  using: "node24"
   main: "dist/index.js"

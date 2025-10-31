@@ -16,6 +16,15 @@ function debugValue(name: string, value: any) {
   debug(`${name}: ${JSON.stringify(value)}`);
 }
 
+function onError(err: unknown) {
+  if (typeof err === "string" || err instanceof Error) {
+    setFailed(err);
+  } else {
+    console.error("Unknown error kind:", err);
+    setFailed("Unknown failure");
+  }
+}
+
 async function getPyPIVersions(): Promise<string[]> {
   const response = await fetch("https://pypi.org/pypi/magic-wormhole/json");
   const jsonResults = await response.json();
@@ -70,4 +79,4 @@ async function main() {
   //#endregion
 }
 
-main().catch((e) => setFailed(e));
+main().catch(onError);
