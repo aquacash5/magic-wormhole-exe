@@ -24,7 +24,7 @@ jobs:
       - name: Setup Chocolatey directories
         uses: ./.github/actions/setup-chocolatey
         with:
-          version: ${{ step.release-info.outputs.version }}
+          version: ${{ steps.release-info.outputs.version }}
 
       - name: Chocolatey pack
         working-directory: temp/magic-wormhole

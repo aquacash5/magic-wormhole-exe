@@ -25,5 +25,5 @@ jobs:
         uses: vedantmgoyal9/winget-releaser@main
         with:
           identifier: magic-wormhole.magic-wormhole
-          release-tag: ${{ step.release-info.outputs.version }}
+          release-tag: ${{ steps.release-info.outputs.version }}
           token: ${{ secrets.WINGET_TOKEN }}
