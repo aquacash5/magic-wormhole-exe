@@ -11,12 +11,10 @@ on:
         description: The version of python use in build
         default: "3.13"
       releaseExe:
-        description: Should the release be prerelease?
+        description: Should the release executable?
+        type: boolean
         required: true
-        default: "true"
-        options:
-          - "true"
-          - "false"
+        default: true
 
 jobs:
   create-executable:
