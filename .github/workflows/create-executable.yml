@@ -37,7 +37,7 @@ jobs:
       - name: Build executable
         run: |
           pip install pyinstaller magic-wormhole==${{ steps.check-build.outputs.version }}
-          pyinstaller ./launcher.py -F -c --distpath=. --clean --onefile --additional-hooks-dir=hooks --name=wormhole
+          pyinstaller ./launcher.py -F -c --distpath=. --clean --onefile --additional-hooks-dir=hooks --name=wormhole --runtime-tmpdir "C:\\Program Data\\wormhole_temp"
 
           $MD5_CHECKSUM=(Get-FileHash ./wormhole.exe -Algorithm MD5).Hash
           $SHA1_CHECKSUM=(Get-FileHash ./wormhole.exe -Algorithm SHA1).Hash
