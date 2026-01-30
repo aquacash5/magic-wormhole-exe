@@ -9,7 +9,14 @@ on:
         description: The version to use for release
       python-version:
         description: The version of python use in build
-        default: '3.13'
+        default: "3.13"
+      releaseExe:
+        description: Should the release be prerelease?
+        required: true
+        default: "true"
+        options:
+          - "true"
+          - "false"
 
 jobs:
   create-executable:
@@ -53,6 +60,7 @@ jobs:
 
       - name: Create release
         uses: softprops/action-gh-release@v2
+        if: ${{ input.releaseExe == 'true' }}
         with:
           name: ${{ inputs.release-version || steps.check-build.outputs.version }}
           tag_name: ${{ inputs.release-version || steps.check-build.outputs.version }}
