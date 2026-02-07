@@ -48,7 +48,7 @@ jobs:
           echo "SHA256 $SHA256_CHECKSUM wormhole.exe" >> wormhole.exe.checksum.txt
 
       - name: Test executable
-        run: wormhole.exe --help
+        run: ./wormhole.exe --help
 
       - name: Upload executable artifact
         uses: actions/upload-artifact@v4
