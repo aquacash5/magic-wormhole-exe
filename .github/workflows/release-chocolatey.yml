@@ -13,7 +13,7 @@ jobs:
     runs-on: windows-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Get Release Info
         id: release-info
@@ -31,7 +31,7 @@ jobs:
         run: choco pack -v
 
       - name: Upload chocolatey folder
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: chocolatey
           path: temp/magic-wormhole
